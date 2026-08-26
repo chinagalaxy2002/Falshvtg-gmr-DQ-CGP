@@ -1,0 +1,56 @@
+{
+  "protocol": {
+    "thresholds": [
+      0.4,
+      0.5,
+      0.6
+    ],
+    "threshold_average": "arithmetic mean over 0.4, 0.5, and 0.6"
+  },
+  "threshold_independent": {
+    "AUROC": 75.89,
+    "mAP": 25.63,
+    "mR@1": 15.34,
+    "mR@3": 28.9,
+    "mR@5": 35.45,
+    "mR+@1": 0.0,
+    "mR+@3": 11.8,
+    "mR+@5": 20.44,
+    "mIoU@1": 33.49,
+    "mIoU@3": 30.4,
+    "mIoU@5": 30.26,
+    "mIoU+@1": 0.0,
+    "mIoU+@3": 12.53,
+    "mIoU+@5": 12.17
+  },
+  "per_threshold": {
+    "0.4": {
+      "Rej-F1": 42.14,
+      "Acc": 61.29,
+      "G-mIoU@1": 27.37,
+      "G-mIoU@3": 20.6,
+      "G-mIoU@5": 18.11
+    },
+    "0.5": {
+      "Rej-F1": 59.23,
+      "Acc": 65.06,
+      "G-mIoU@1": 37.33,
+      "G-mIoU@3": 31.13,
+      "G-mIoU@5": 28.95
+    },
+    "0.6": {
+      "Rej-F1": 69.32,
+      "Acc": 67.95,
+      "G-mIoU@1": 46.58,
+      "G-mIoU@3": 40.94,
+      "G-mIoU@5": 39.14
+    }
+  },
+  "threshold_mean": {
+    "Rej-F1": 56.9,
+    "Acc": 64.77,
+    "G-mIoU@1": 37.09,
+    "G-mIoU@3": 30.89,
+    "G-mIoU@5": 28.73
+  }
+}

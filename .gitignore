@@ -1,0 +1,24 @@
+# Python and editor state
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.idea/
+.vscode/
+.DS_Store
+
+# Local environments and logs
+.env
+.venv/
+venv/
+*.log
+
+# Soccer-GMR gated assets must not be redistributed
+Soccergmr
+*.npz
+*.tar
+
+# Generated runs
+outputs/
+
+# Checkpoints are distributed as GitHub Release assets
+checkpoints/*.ckpt
