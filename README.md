@@ -393,3 +393,41 @@ Soccer-GMR benchmark：
 仓库代码遵循 [MIT License](LICENSE)。FlashVTG 派生组件说明见
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。Soccer-GMR 数据、视频和特征遵循其各自的
 访问协议、NDA 和版权条款。
+
+## 12. Baseline 与 v3 的独立概率校准对比
+
+本节补充一个与第 3 节历史 `v3 calibrated` operating-point 后处理不同的比较：两个模型均使用
+**各自的 validation prediction 独立拟合**一个仅含截距的概率校准器，并在拟合完成后冻结参数，
+对 Standard test 只评测一次。test 标签不参与 bias 选择。
+
+校准变换为：
+
+```text
+calibrated_score = sigmoid(logit(raw_score) + b_model)
+```
+
+`b_model` 通过最小化 validation existence label 的 binary negative log-likelihood (NLL) 得到；
+这等价于固定 slope 为 1 的 intercept-only Platt calibration。选择 NLL 而非直接最大化
+Rej-F1 或 G-mIoU：后两者在 null query 较多时可能偏好把大量样本预测为空集，产生退化的
+operating point。该原则既评价概率是否可信，也避免使用 test 集调阈值。
+
+| Model | validation-fitted bias | Validation NLL (raw → calibrated) |
+|---|---:|---:|
+| Matched FlashVTG baseline | +0.605320 | 0.6701595 → **0.6442740** |
+| DQ-CGP v3 | +0.003765 | 0.5880577 → **0.5880566** |
+
+在此相同协议下冻结 bias 后的 Standard test 结果如下。AUROC、mAP、mR 和 mIoU 不受单调
+score transform 影响；表中 Rej-F1、Accuracy 和 G-mIoU 是 `τ∈{0.4,0.5,0.6}` 的算术平均。
+
+| Model | AUROC | mAP | mR@5 | Mean Rej-F1 | Mean Accuracy | Mean G-mIoU@1 | Mean G-mIoU@3 | Mean G-mIoU@5 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Matched FlashVTG baseline, NLL-calibrated | 73.74 | 25.42 | 34.46 | 40.09 | 60.43 | 29.45 | 22.96 | 20.77 |
+| DQ-CGP v3, NLL-calibrated | **76.02** | **26.13** | **36.03** | **66.68** | **67.41** | **44.09** | **38.14** | **36.28** |
+
+该对比的结论是：在同一 validation-only 概率校准原则下，v3 在检索排序、定位以及阈值型
+GMR 指标上都优于 baseline。baseline 的正 bias 表明其原始 existence score 相对保守；v3 的
+NLL-optimal bias 接近零，表明其原始 score 已接近这一概率校准目标。
+
+这组结果不能与第 3 节的历史 `v3 calibrated`（`b=-0.34110591`）混为同一个协议：后者是为
+特定阈值 operating point 设定的后处理偏移，不是这里的 NLL-optimal probability calibration。
+机器可读汇总见 [NLL calibration comparison](results/paper_reproduction/test/baseline_v3_nll_calibration_comparison.json)。

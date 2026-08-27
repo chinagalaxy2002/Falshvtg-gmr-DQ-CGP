@@ -1,0 +1,38 @@
+{
+  "protocol": {
+    "dataset": "Soccer-GMR Standard test",
+    "fit_split": "Soccer-GMR Standard validation",
+    "fit_rule": "intercept-only Platt calibration; minimize binary NLL with slope fixed to 1",
+    "transform": "calibrated_score = sigmoid(logit(raw_score) + b_model)",
+    "test_usage": "test labels are used only for one-time evaluation after b_model is frozen",
+    "thresholds": [0.4, 0.5, 0.6],
+    "threshold_mean": "arithmetic mean over 0.4, 0.5, and 0.6"
+  },
+  "matched_flashvtg_baseline": {
+    "fitted_logit_bias": 0.6053201442,
+    "validation_probability_metrics": {
+      "NLL_raw": 0.6701594727,
+      "NLL_calibrated": 0.6442739826,
+      "Brier_raw": 0.2298736581,
+      "Brier_calibrated": 0.2198494350
+    },
+    "test_threshold_independent": {"AUROC": 73.74, "mAP": 25.42, "mR@5": 34.46},
+    "test_per_threshold": {
+      "0.4": {"Rej-F1": 16.36, "Acc": 55.60, "G-mIoU@1": 18.29, "G-mIoU@3": 11.26, "G-mIoU@5": 8.66},
+      "0.5": {"Rej-F1": 35.38, "Acc": 58.40, "G-mIoU@1": 24.43, "G-mIoU@3": 17.69, "G-mIoU@5": 15.33},
+      "0.6": {"Rej-F1": 68.52, "Acc": 67.28, "G-mIoU@1": 45.62, "G-mIoU@3": 39.93, "G-mIoU@5": 38.33}
+    },
+    "test_threshold_mean": {"Rej-F1": 40.09, "Acc": 60.43, "G-mIoU@1": 29.45, "G-mIoU@3": 22.96, "G-mIoU@5": 20.77}
+  },
+  "dq_cgp_v3": {
+    "fitted_logit_bias": 0.0037654596,
+    "validation_probability_metrics": {"NLL_raw": 0.5880577271, "NLL_calibrated": 0.5880565566},
+    "test_threshold_independent": {"AUROC": 76.02, "mAP": 26.13, "mR@5": 36.03},
+    "test_per_threshold": {
+      "0.4": {"Rej-F1": 61.20, "Acc": 66.22, "G-mIoU@1": 38.64, "G-mIoU@3": 32.27, "G-mIoU@5": 30.13},
+      "0.5": {"Rej-F1": 67.25, "Acc": 67.47, "G-mIoU@1": 44.27, "G-mIoU@3": 38.30, "G-mIoU@5": 36.44},
+      "0.6": {"Rej-F1": 71.60, "Acc": 68.53, "G-mIoU@1": 49.35, "G-mIoU@3": 43.86, "G-mIoU@5": 42.27}
+    },
+    "test_threshold_mean": {"Rej-F1": 66.68, "Acc": 67.41, "G-mIoU@1": 44.09, "G-mIoU@3": 38.14, "G-mIoU@5": 36.28}
+  }
+}
