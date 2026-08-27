@@ -57,72 +57,137 @@ head、dense point 生成方式和 NMS 流程。具体设计见
 保存的实际参数文件为
 [opt.json](results/flashvtg_dq_cgp_v3_topk4_seed2024/validation/opt.json)。
 
-## 3. 复现结果
+## 3. 与论文及论文复现结果对比
+
+对照对象统一为 Soccer-GMR Standard split 上的 **FlashVTG-GMR**，而不是不含 existence
+adapter 的原始 FlashVTG：
+
+- `论文报告`：Ding et al. 的 [论文 Table 2](https://arxiv.org/pdf/2605.02623)及
+  [官方仓库 Main Results](https://github.com/dymm9977/generalized-moment-retrieval#main-results)；
+  主表采用 `τ=0.4`，附录 Table 8 采用 `τ∈{0.4,0.6,0.8}`。
+- `论文复现`：我们使用相同 Standard split 和 FlashVTG-GMR 代码、seed 2024 从头训练的
+  matched baseline；测试结果位于 `results/test/matched_baseline/`。
+- `DQ-CGP v3 raw`：`flashvtg_dq_cgp_v3_topk4_seed2024` 的原始 existence score。
+- `DQ-CGP v3 calibrated`：同一个 v3 checkpoint、同一组窗口，只对 existence score 使用
+  validation 拟合的单调校准。
+
+论文未报告的项目统一写作 `—`，不通过其他表格或近似值补填。
 
 ### 3.1 Standard validation
 
-最佳 checkpoint 来自第 60 轮，按 no-NMS `MR-full-mAP=26.03` 选择。
+论文只报告 test set，没有给出 validation 指标。因此下表同时保留论文列并明确标记为 `—`，
+比较我们对论文 FlashVTG-GMR 的复现与 DQ-CGP v3。v3 最佳 checkpoint 来自第 60 轮，按
+no-NMS `MR-full-mAP=26.03` 选择。
 
-| Metric | no NMS | NMS=0.7 |
-|---|---:|---:|
-| MR-full-R1@0.3 | **47.84** | 47.45 |
-| MR-full-R1@0.5 | 41.18 | 41.18 |
-| MR-full-R1@0.7 | 26.27 | 26.27 |
-| MR-full-mAP | 26.03 | **27.91** |
-| MR-full-mAP@0.5 | 45.91 | **49.34** |
-| MR-full-mAP@0.75 | 28.74 | **30.88** |
-| MR-full-mIoU | **35.12** | 34.96 |
-| GMR-TPR | 63.53 | 63.53 |
-| GMR-TNR | 69.05 | 69.05 |
-| GMR-BalancedAcc | 66.29 | 66.29 |
+| Metric | 论文报告 | 论文复现 no NMS | v3 no NMS | 论文复现 NMS=0.7 | v3 NMS=0.7 |
+|---|---:|---:|---:|---:|---:|
+| MR-full-R1@0.3 | — | **52.55** | 47.84 | **50.98** | 47.45 |
+| MR-full-R1@0.5 | — | **43.92** | 41.18 | **41.96** | 41.18 |
+| MR-full-R1@0.7 | — | 25.49 | **26.27** | 23.92 | **26.27** |
+| MR-full-mAP | — | **26.98** | 26.03 | **28.33** | 27.91 |
+| MR-full-mAP@0.5 | — | **49.05** | 45.91 | **50.96** | 49.34 |
+| MR-full-mAP@0.75 | — | **28.88** | 28.74 | **31.06** | 30.88 |
+| MR-full-mIoU | — | **37.02** | 35.12 | **35.48** | 34.96 |
+| GMR-TPR | — | 51.76 | **63.53** | 51.76 | **63.53** |
+| GMR-TNR | — | **82.38** | 69.05 | **82.38** | 69.05 |
+| GMR-BalancedAcc | — | **67.07** | 66.29 | **67.07** | 66.29 |
 
-### 3.2 Standard test
+### 3.2 Standard test：严格对齐论文主表（τ=0.4）
 
-测试保留 top-10 NMS predictions，并分别使用 existence thresholds `0.4`、`0.5`、`0.6`。
-表中的 `Mean` 是三个阈值的算术平均。`Calibrated` 只对 existence probability 应用在
-validation 上确定的单调变换，不改变窗口、窗口排序、AUROC、mAP、mR 或 mIoU：
+以下八项与论文 Table 2 的列完全一致。`v3 raw` 是无需校准的直接模型结果，适合作为主要
+方法对比；`v3 calibrated` 展示 validation-fitted operating point 的效果。
+
+| Model | AUROC | Rej-F1 | mAP | mR@1 | mR@5 | mR+@5 | G-mIoU@1 | G-mIoU@3 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| 论文 FlashVTG-GMR | 74.00 | 61.72 | 24.62 | 15.08 | 33.36 | 19.10 | 39.58 | 33.53 |
+| 我们复现 FlashVTG-GMR | 73.74 | 52.83 | 25.42 | 15.94 | 34.46 | 17.44 | 33.20 | 26.70 |
+| DQ-CGP v3 raw | **76.02** | 61.13 | **26.13** | **16.21** | **36.03** | **21.04** | 38.59 | 32.24 |
+| DQ-CGP v3 calibrated | **76.02** | **66.01** | **26.13** | **16.21** | **36.03** | **21.04** | **43.13** | **37.12** |
+
+相对提升如下；单位均为百分点：
+
+| Comparison | AUROC | Rej-F1 | mAP | mR@1 | mR@5 | mR+@5 | G-mIoU@1 | G-mIoU@3 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| v3 raw − 论文 | +2.02 | -0.59 | +1.51 | +1.13 | +2.67 | +1.94 | -0.99 | -1.29 |
+| v3 calibrated − 论文 | +2.02 | +4.29 | +1.51 | +1.13 | +2.67 | +1.94 | +3.55 | +3.59 |
+| v3 raw − 我们复现 | +2.28 | +8.30 | +0.71 | +0.27 | +1.57 | +3.60 | +5.39 | +5.54 |
+| v3 calibrated − 我们复现 | +2.28 | +13.18 | +0.71 | +0.27 | +1.57 | +3.60 | +9.93 | +10.42 |
+
+### 3.3 Standard test：论文未报告的扩展指标（τ=0.4）
+
+这些指标由官方评测代码输出，但论文 Table 2 没有对应列。为保持完整性，仍展示论文复现与
+v3 的所有结果，并将论文值明确标记为 `—`。
+
+| Metric | 论文报告 | 我们复现 FlashVTG-GMR | v3 raw | v3 calibrated |
+|---|---:|---:|---:|---:|
+| Accuracy | — | 62.26 | 66.12 | **66.89** |
+| mR@3 | — | 27.33 | **28.42** | **28.42** |
+| mR+@1 | — | 0.00 | 0.00 | 0.00 |
+| mR+@3 | — | 8.16 | **9.34** | **9.34** |
+| mIoU@1 | — | 34.04 | **34.88** | **34.88** |
+| mIoU@3 | — | 30.68 | **32.07** | **32.07** |
+| mIoU@5 | — | 30.66 | **31.94** | **31.94** |
+| mIoU+@1 | — | 0.00 | 0.00 | 0.00 |
+| mIoU+@3 | — | 12.17 | **14.40** | **14.40** |
+| mIoU+@5 | — | 12.24 | **14.06** | **14.06** |
+| G-mIoU@5 | — | 24.64 | 30.11 | **35.24** |
+
+### 3.4 论文 Table 8 阈值敏感性复现
+
+此表严格使用论文附录协议 `τ∈{0.4,0.6,0.8}`；`AP` 是这三个阈值的算术平均，不与下一节
+`τ∈{0.4,0.5,0.6}` 的 Mean 混用。
+
+| Model | Rej-F1@0.4 | @0.6 | @0.8 | AP | G-mIoU@1 (τ=0.4) | @0.6 | @0.8 | AP |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| 论文 FlashVTG-GMR | 61.72 | 73.06 | 74.63 | 70.94 | 39.58 | 51.38 | 54.13 | 49.43 |
+| 我们复现 FlashVTG-GMR | 52.83 | **74.11** | **75.04** | 67.33 | 33.20 | **53.75** | **55.16** | 47.37 |
+| DQ-CGP v3 raw | 61.13 | 71.60 | 74.43 | 69.05 | 38.59 | 49.35 | 53.96 | 47.30 |
+| DQ-CGP v3 calibrated | **66.01** | 72.49 | **75.04** | **71.18** | **43.13** | 51.25 | 54.80 | **49.73** |
+
+### 3.5 本仓库完整三阈值结果（τ=0.4/0.5/0.6）
+
+本仓库发布的测试产物使用 `0.4/0.5/0.6`，表中 `Mean` 是三者的算术平均。论文没有报告
+`τ=0.5`，也没有报告这一阈值集合的均值；对应位置以 `—` 标记。论文在 `τ=0.4/0.6`
+报告了哪些指标，就在同一张表中列出哪些指标。
+
+| Model / score | Threshold | Rej-F1 | Accuracy | G-mIoU@1 | G-mIoU@3 | G-mIoU@5 |
+|---|---:|---:|---:|---:|---:|---:|
+| 论文 FlashVTG-GMR | 0.4 | 61.72 | — | 39.58 | 33.53 | — |
+| 论文 FlashVTG-GMR | 0.5 | — | — | — | — | — |
+| 论文 FlashVTG-GMR | 0.6 | 73.06 | — | 51.38 | — | — |
+| 论文 FlashVTG-GMR | **Mean** | — | — | — | — | — |
+| 我们复现 FlashVTG-GMR | 0.4 | 52.83 | 62.26 | 33.20 | 26.70 | 24.64 |
+| 我们复现 FlashVTG-GMR | 0.5 | 72.46 | 67.86 | 51.30 | 45.89 | 44.55 |
+| 我们复现 FlashVTG-GMR | 0.6 | 74.11 | 68.24 | 53.75 | 48.52 | 47.35 |
+| 我们复现 FlashVTG-GMR | **Mean** | **66.47** | **66.12** | **46.08** | **40.37** | **38.85** |
+| DQ-CGP v3 raw | 0.4 | 61.13 | 66.12 | 38.59 | 32.24 | 30.11 |
+| DQ-CGP v3 raw | 0.5 | 67.25 | 67.47 | 44.27 | 38.30 | 36.44 |
+| DQ-CGP v3 raw | 0.6 | 71.60 | 68.53 | 49.35 | 43.86 | 42.27 |
+| DQ-CGP v3 raw | **Mean** | **66.66** | **67.37** | **44.07** | **38.13** | **36.27** |
+| DQ-CGP v3 calibrated | 0.4 | 66.01 | 66.89 | 43.13 | 37.12 | 35.24 |
+| DQ-CGP v3 calibrated | 0.5 | 71.30 | 68.53 | 48.96 | 43.35 | 41.75 |
+| DQ-CGP v3 calibrated | 0.6 | 72.49 | 68.05 | 51.25 | 45.85 | 44.43 |
+| DQ-CGP v3 calibrated | **Mean** | **69.93** | **67.82** | **47.78** | **42.11** | **40.47** |
+
+校准公式为：
 
 ```text
 calibrated_score = sigmoid(logit(raw_score) - 0.34110591)
 ```
 
-| Metric | Matched FlashVTG | Previous DQ-CGP v2 calibrated | v3 raw | v3 calibrated |
-|---|---:|---:|---:|---:|
-| AUROC | 73.74 | 75.89 | **76.02** | **76.02** |
-| Mean Rej-F1 | 66.47 | 66.12 | 66.66 | **69.93** |
-| mAP | 25.42 | 25.63 | **26.13** | **26.13** |
-| mR@1 | 15.94 | 15.34 | **16.21** | **16.21** |
-| mR@3 | 27.33 | **28.90** | 28.42 | 28.42 |
-| mR@5 | 34.46 | 35.45 | **36.03** | **36.03** |
-| mR+@3 | 8.16 | **11.80** | 9.34 | 9.34 |
-| mR+@5 | 17.44 | 20.44 | **21.04** | **21.04** |
-| mIoU@1 | 34.04 | 33.49 | **34.88** | **34.88** |
-| mIoU@3 | 30.68 | 30.40 | **32.07** | **32.07** |
-| mIoU@5 | 30.66 | 30.26 | **31.94** | **31.94** |
-| Mean G-mIoU@1 | 46.08 | 44.10 | 44.07 | **47.78** |
-| Mean G-mIoU@3 | 40.37 | 38.28 | 38.13 | **42.11** |
-| Mean G-mIoU@5 | 38.85 | 36.41 | 36.27 | **40.47** |
-
-v3 的逐阈值 raw / calibrated 结果如下：
-
-| Threshold | Raw Rej-F1 | Cal. Rej-F1 | Raw G-mIoU@1 | Cal. G-mIoU@1 | Raw G-mIoU@3 | Cal. G-mIoU@3 | Raw G-mIoU@5 | Cal. G-mIoU@5 |
-|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 0.4 | 61.13 | 66.01 | 38.59 | 43.13 | 32.24 | 37.12 | 30.11 | 35.24 |
-| 0.5 | 67.25 | 71.30 | 44.27 | 48.96 | 38.30 | 43.35 | 36.44 | 41.75 |
-| 0.6 | 71.60 | 72.49 | 49.35 | 51.25 | 43.86 | 45.85 | 42.27 | 44.43 |
-| **Mean** | **66.66** | **69.93** | **44.07** | **47.78** | **38.13** | **42.11** | **36.27** | **40.47** |
-
-相对 matched FlashVTG，v3 calibrated 的 AUROC、mAP、mR@5、mR+@5 和 Mean
-G-mIoU@1/@3/@5 分别提高 `2.28`、`0.71`、`1.57`、`3.60` 和
-`1.70/1.74/1.62` 个百分点。这里报告同一次测试的原始值与单调校准值，不把校准结果误作
-新的检索窗口结果。
+它不改变窗口、窗口排序、AUROC、mAP、mR、mR+、mIoU 或 mIoU+。因此，v3 相对论文和
+论文复现的 localization 提升来自模型本身；校准只影响 Rej-F1、Accuracy 和 G-mIoU。
 
 详细产物：
 
+- [论文复现 test summary](results/test/matched_baseline/summary_three_thresholds.json)
+- [论文复现 validation metrics, NMS](results/paper_reproduction/validation/best_nms_metrics.json)
+- [论文复现 validation metrics, no NMS](results/paper_reproduction/validation/best_no_nms_metrics.json)
+- [论文 Table 8 协议对照汇总](results/paper_reproduction/test/table8_threshold_comparison.json)
 - [v3 calibrated test summary](results/flashvtg_dq_cgp_v3_topk4_seed2024/test/calibrated/summary_three_thresholds.json)
 - [v3 raw test summary](results/flashvtg_dq_cgp_v3_topk4_seed2024/test/raw/summary_three_thresholds.json)
-- [v3 best validation metrics, NMS](results/flashvtg_dq_cgp_v3_topk4_seed2024/validation/best_nms_metrics.json)
-- [v3 best validation metrics, no NMS](results/flashvtg_dq_cgp_v3_topk4_seed2024/validation/best_no_nms_metrics.json)
+- [v3 validation metrics, NMS](results/flashvtg_dq_cgp_v3_topk4_seed2024/validation/best_nms_metrics.json)
+- [v3 validation metrics, no NMS](results/flashvtg_dq_cgp_v3_topk4_seed2024/validation/best_no_nms_metrics.json)
 
 ## 4. 环境
 
